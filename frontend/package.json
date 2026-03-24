@@ -27,18 +27,18 @@
     "react-dom": "19.2.3",
     "simplex-noise": "^4.0.3",
     "sweetalert2": "^11.26.17",
-    "tailwind-merge": "^3.4.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/js-cookie": "^3.0.6",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4",
+    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@tailwindcss/postcss": "^4"
+  },
+  "devDependencies": {
+    "@types/js-cookie": "^3.0.6",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.1.1",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "eslint-config-next": "16.1.1"
   }
 }
