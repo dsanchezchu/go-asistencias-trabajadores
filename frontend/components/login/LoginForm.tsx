@@ -30,7 +30,7 @@ export default function LoginForm() {
         if (mode === 'login') {
           localStorage.setItem('token', data.token)
           setPassword('')
-          router.push('/dashboard')
+          router.push('/dashboard/')
         } else {
           setSuccess(data.msg || 'Registro exitoso. Espere aprobación.')
           setMode('login')

@@ -115,41 +115,53 @@ func main() {
 	basePath := "/proyectos/asistencias"
 
 	if _, err := os.Stat(staticPath); err == nil {
-		r.Static(basePath+"/_next", filepath.Join(staticPath, "_next"))
-		r.Static(basePath+"/images", filepath.Join(staticPath, "images"))
-		r.StaticFile(basePath+"/favicon.ico", filepath.Join(staticPath, "favicon.ico"))
-		r.StaticFile(basePath+"/manifest.json", filepath.Join(staticPath, "manifest.json"))
-		r.StaticFile(basePath+"/robots.txt", filepath.Join(staticPath, "robots.txt"))
-
-		r.Static("/_next", filepath.Join(staticPath, "_next"))
-		r.Static("/images", filepath.Join(staticPath, "images"))
-		r.StaticFile("/favicon.ico", filepath.Join(staticPath, "favicon.ico"))
-		r.StaticFile("/manifest.json", filepath.Join(staticPath, "manifest.json"))
-		r.StaticFile("/robots.txt", filepath.Join(staticPath, "robots.txt"))
-
-		// Servir la raíz del proyecto y el basePath
-		r.GET(basePath, func(c *gin.Context) {
-			c.File(filepath.Join(staticPath, "index.html"))
-		})
-		r.GET(basePath+"/", func(c *gin.Context) {
-			c.File(filepath.Join(staticPath, "index.html"))
-		})
-
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
+
+			// Guard against API phantom routes
+			if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, basePath+"/api") {
+				c.JSON(http.StatusNotFound, gin.H{"error": "API endpoint not found"})
+				return
+			}
+
+			// Strip Cloudflare basePath for local file resolution
+			localPath := path
+			if strings.HasPrefix(localPath, basePath) {
+				localPath = strings.TrimPrefix(localPath, basePath)
+			}
+			if localPath == "" {
+				localPath = "/"
+			}
+
+			fullPath := filepath.Join(staticPath, localPath)
 			
-			// Si es un request de un asset de Next.js (CSS, JS, media) que no existe (ej. por cache vieja),
-			// no mandamos el index.html sino un 404 real para evitar SyntaxError '<' en el navegador.
-			if strings.Contains(path, "/_next/") || strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".css") || strings.HasPrefix(path, "/api") || strings.HasPrefix(path, basePath+"/api") {
+			// 1. Try exact file
+			if info, err := os.Stat(fullPath); err == nil && !info.IsDir() {
+				c.File(fullPath)
+				return
+			}
+
+			// 2. Try .html extension
+			fullPathHtml := fullPath + ".html"
+			if info, err := os.Stat(fullPathHtml); err == nil && !info.IsDir() {
+				c.File(fullPathHtml)
+				return
+			}
+
+			// 3. Try /index.html (for trailingSlash: true routes)
+			fullPathIndex := filepath.Join(fullPath, "index.html")
+			if info, err := os.Stat(fullPathIndex); err == nil && !info.IsDir() {
+				c.File(fullPathIndex)
+				return
+			}
+
+			// 4. Missing Next.js assets should 404, not fallback to HTML
+			if strings.Contains(localPath, "/_next/") || strings.Contains(localPath, ".") {
 				c.Status(http.StatusNotFound)
 				return
 			}
-			
-			// Para navegación reactiva normal, servimos la APP.
-			if strings.HasPrefix(path, basePath) || path == "/" {
-				c.File(filepath.Join(staticPath, "index.html"))
-				return
-			}
+
+			// 5. Ultimate fallback for base routes SPA behavior
 			c.File(filepath.Join(staticPath, "index.html"))
 		})
 	} else {
