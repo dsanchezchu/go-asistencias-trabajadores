@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { BASE_PATH } from "@/config";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], preload: false });
 
 export const metadata: Metadata = {
   title: "Go Asistencias | Sistema de Gestión",
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Go Asistencias Development Team" }],
   robots: "index, follow",
   icons: {
-    icon: "/favicon.ico",
+    icon: `${BASE_PATH}/favicon.ico`,
   },
   openGraph: {
     title: "Go Asistencias",
@@ -33,7 +34,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Configuración estática base. El ThemeProvider hidratará el tema correcto en el cliente.
   const theme = "dark";
 
   return (
