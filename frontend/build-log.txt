@@ -1,0 +1,26 @@
+
+> frontend@0.1.0 build
+> next build
+
+Ôû▓ Next.js 16.1.1 (Turbopack)
+
+  Creating an optimized production build ...
+/*! ­ƒî╝ daisyUI 5.5.14 */
+Found 1 warning while optimizing generated CSS:
+
+Ôöé }
+Ôöé @layer base {
+Ôöé   @property --radialprogress {
+Ôöå            ^-- Unknown at rule: @property
+Ôöå
+Ôöé     syntax: "<percentage>";
+Ôöé     inherits: true;
+
+Ô£ô Compiled successfully in 7.2s
+  Running TypeScript ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/14) ...
+Error occurred prerendering page "/admin/demo-users". Read more: https://nextjs.org/docs/messages/prerender-error
+Error: Route /admin/demo-users with `dynamic = "error"` couldn't be rendered statically because it used `cookies()`. See more info here: https://nextjs.org/docs/app/building-your-application/rendering/static-and-dynamic#dynamic-rendering
+Export encountered an error on /(authenticated)/admin/demo-users/page: /admin/demo-users, exiting the build.
+Ô¿» Next.js build worker exited with code: 1 and signal: null

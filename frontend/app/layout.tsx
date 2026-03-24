@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { cookies } from "next/headers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,16 +28,16 @@ export const viewport = {
   themeColor: "#000000",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const theme = (cookieStore.get("theme")?.value as any) || "dark";
+  // Configuración estática base. El ThemeProvider hidratará el tema correcto en el cliente.
+  const theme = "dark";
 
   return (
-    <html lang="es" data-theme={theme} className={theme === "dark" ? "dark" : ""}>
+    <html lang="es" data-theme={theme} className="dark">
       <body className={`${inter.className} transition-colors duration-300`}>
         <ThemeProvider initialTheme={theme}>
           {children}
