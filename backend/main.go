@@ -106,7 +106,15 @@ func main() {
 	}
 
 	staticPath := filepath.Join(".", "frontend", "out")
+	basePath := "/proyectos/asistencias"
+
 	if _, err := os.Stat(staticPath); err == nil {
+		r.Static(basePath+"/_next", filepath.Join(staticPath, "_next"))
+		r.Static(basePath+"/images", filepath.Join(staticPath, "images"))
+		r.StaticFile(basePath+"/favicon.ico", filepath.Join(staticPath, "favicon.ico"))
+		r.StaticFile(basePath+"/manifest.json", filepath.Join(staticPath, "manifest.json"))
+		r.StaticFile(basePath+"/robots.txt", filepath.Join(staticPath, "robots.txt"))
+
 		r.Static("/_next", filepath.Join(staticPath, "_next"))
 		r.Static("/images", filepath.Join(staticPath, "images"))
 		r.StaticFile("/favicon.ico", filepath.Join(staticPath, "favicon.ico"))
