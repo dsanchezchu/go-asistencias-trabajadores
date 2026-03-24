@@ -1,4 +1,5 @@
-module go-asistencias/backend
+module go-asistencias
+// +heroku install ./backend
 
 go 1.24.0
 
