@@ -89,7 +89,7 @@ func main() {
 	settingsHandler := handlers.NewSettingsHandler(userService)
 
 	r := gin.Default()
-	
+
 	// Confiar en todos los proxies (Heroku y Cloudflare) para resolver la IP real
 	r.SetTrustedProxies(nil)
 	r.ForwardedByClientIP = true
@@ -118,23 +118,18 @@ func main() {
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
 
-			// Guard against API phantom routes
 			if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, basePath+"/api") {
 				c.JSON(http.StatusNotFound, gin.H{"error": "API endpoint not found"})
 				return
 			}
 
-			// Strip Cloudflare basePath for local file resolution
-			localPath := path
-			if strings.HasPrefix(localPath, basePath) {
-				localPath = strings.TrimPrefix(localPath, basePath)
-			}
+			localPath := strings.TrimPrefix(path, basePath)
 			if localPath == "" {
 				localPath = "/"
 			}
 
 			fullPath := filepath.Join(staticPath, localPath)
-			
+
 			// 1. Try exact file
 			if info, err := os.Stat(fullPath); err == nil && !info.IsDir() {
 				c.File(fullPath)
@@ -174,4 +169,3 @@ func main() {
 	log.Printf("Servidor iniciado en el puerto %s", cfg.Port)
 	r.Run(":" + cfg.Port)
 }
-
