@@ -1,1 +1,1 @@
-web: ./backend/go-asistencias
+web: ./bin/main

@@ -2,11 +2,11 @@
   "name": "go-asistencias-trabajadores",
   "version": "1.0.0",
   "description": "Sistema de gestión de asistencias y trabajadores",
+  "engines": {
+    "node": "20.x",
+    "npm": "10.x"
+  },
   "scripts": {
     "heroku-postbuild": "cd frontend && npm install && npm run build"
-  },
-  "engines": {
-    "node": "18.x",
-    "npm": "9.x"
   }
 }
