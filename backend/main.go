@@ -120,10 +120,23 @@ func main() {
 		r.StaticFile("/manifest.json", filepath.Join(staticPath, "manifest.json"))
 		r.StaticFile("/robots.txt", filepath.Join(staticPath, "robots.txt"))
 
+		// Servir la raíz del proyecto y el basePath
+		r.GET(basePath, func(c *gin.Context) {
+			c.File(filepath.Join(staticPath, "index.html"))
+		})
+		r.GET(basePath+"/", func(c *gin.Context) {
+			c.File(filepath.Join(staticPath, "index.html"))
+		})
+
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
 			if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, basePath+"/api") {
 				c.JSON(http.StatusNotFound, gin.H{"error": "API endpoint not found"})
+				return
+			}
+			// Si la ruta empieza con el basePath o es la raíz, servimos el frontend
+			if strings.HasPrefix(path, basePath) || path == "/" {
+				c.File(filepath.Join(staticPath, "index.html"))
 				return
 			}
 			c.File(filepath.Join(staticPath, "index.html"))
