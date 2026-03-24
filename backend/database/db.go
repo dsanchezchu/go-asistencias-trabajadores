@@ -35,7 +35,6 @@ func Connect(cfg *config.Config) {
 			host, port, cfg.DBUser, cfg.DBPassword, cfg.DBName)
 		dialector = postgres.Open(dsn)
 	} else {
-		// Por defecto mysql
 		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBName)
 		dialector = mysql.Open(dsn)
@@ -59,13 +58,8 @@ func Connect(cfg *config.Config) {
 		log.Fatalf("Error fatal: No se pudo conectar a la base de datos tras %d intentos: %v", maxRetries, err)
 	}
 
-	// Crear tablas
 	log.Println("Conexión establecida. Sincronizando tablas...")
 	DB.AutoMigrate(&models.Admin{}, &models.Trabajador{}, &models.Asistencia{})
-
-	// REMOVIDO: Ya no se asigna automáticamente rol admin al primer usuario
-	// Ahora todos los usuarios nuevos se crean como admin_prueba por defecto
-	// DB.Model(&models.Admin{}).Where("id = 1 AND (role IS NULL OR role = '' OR role = 'admin_prueba')").Update("role", models.RoleAdmin)
 
 	log.Println("Base de datos sincronizada")
 }
