@@ -8,20 +8,32 @@ import (
 	"time"
 
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
 
 func Connect(cfg *config.Config) {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBName)
+	var dsn string
+	var dialector gorm.Dialector
+
+	if cfg.DBConnection == "postgres" {
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=5432 sslmode=require TimeZone=America/Lima",
+			cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName)
+		dialector = postgres.Open(dsn)
+	} else {
+		// Por defecto mysql
+		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+			cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBName)
+		dialector = mysql.Open(dsn)
+	}
 
 	var err error
 	maxRetries := 5
 	for i := 1; i <= maxRetries; i++ {
 		log.Printf("Intentando conectar a DB (Intento %d/%d)...", i, maxRetries)
-		DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		DB, err = gorm.Open(dialector, &gorm.Config{})
 		if err == nil {
 			break
 		}
@@ -32,7 +44,7 @@ func Connect(cfg *config.Config) {
 	}
 
 	if err != nil {
-		log.Fatalf("Error fatal: No se pudo conectar a MySQL tras %d intentos: %v", maxRetries, err)
+		log.Fatalf("Error fatal: No se pudo conectar a la base de datos tras %d intentos: %v", maxRetries, err)
 	}
 
 	// Crear tablas

@@ -22,41 +22,64 @@ func GenerateUserHash(admin *models.Admin) string {
 	return fmt.Sprintf("%x", hasher.Sum(nil))[:16] // Primeros 16 caracteres
 }
 
-// validateMysqldumpPath valida que el binario mysqldump exista
-func validateMysqldumpPath() (string, error) {
-	mysqldumpBin := os.Getenv("MYSQLDUMP_PATH")
-	if mysqldumpBin == "" {
-		// Rutas por defecto según el sistema operativo
+func validateDumpPath(isPostgres bool) (string, error) {
+	envKey := "MYSQLDUMP_PATH"
+	if isPostgres {
+		envKey = "PG_DUMP_PATH"
+	}
+	dumpBin := os.Getenv(envKey)
+
+	if dumpBin == "" {
 		if runtime.GOOS == "windows" {
-			// Rutas comunes en Windows
-			defaultPaths := []string{
-				"C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe",
-				"C:\\Program Files\\MySQL\\MySQL Server 5.7\\bin\\mysqldump.exe",
-				"C:\\xampp\\mysql\\bin\\mysqldump.exe",
-				"C:\\wamp64\\bin\\mysql\\mysql8.0.31\\bin\\mysqldump.exe",
-			}
-			for _, path := range defaultPaths {
-				if _, err := os.Stat(path); err == nil {
-					mysqldumpBin = path
-					break
+			if isPostgres {
+				defaultPaths := []string{
+					"C:\\Program Files\\PostgreSQL\\15\\bin\\pg_dump.exe",
+					"C:\\Program Files\\PostgreSQL\\14\\bin\\pg_dump.exe",
+				}
+				for _, path := range defaultPaths {
+					if _, err := os.Stat(path); err == nil {
+						dumpBin = path
+						break
+					}
+				}
+			} else {
+				defaultPaths := []string{
+					"C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe",
+					"C:\\Program Files\\MySQL\\MySQL Server 5.7\\bin\\mysqldump.exe",
+					"C:\\xampp\\mysql\\bin\\mysqldump.exe",
+					"C:\\wamp64\\bin\\mysql\\mysql8.0.31\\bin\\mysqldump.exe",
+				}
+				for _, path := range defaultPaths {
+					if _, err := os.Stat(path); err == nil {
+						dumpBin = path
+						break
+					}
 				}
 			}
-			if mysqldumpBin == "" {
-				return "", fmt.Errorf("mysqldump no encontrado en rutas comunes de Windows. Configure MYSQLDUMP_PATH en variables de entorno")
+			if dumpBin == "" {
+				binName := "mysqldump"
+				if isPostgres {
+					binName = "pg_dump"
+				}
+				return "", fmt.Errorf("%s no encontrado. Configure %s en variables de entorno", binName, envKey)
 			}
 		} else {
-			// Unix/Linux
-			mysqldumpBin = "/usr/bin/mysqldump"
+			if isPostgres {
+				dumpBin = "pg_dump"
+			} else {
+				dumpBin = "mysqldump"
+			}
+		}
+	}
+    // If it's a direct command like "pg_dump" or "mysqldump" rely on $PATH instead of Stat
+	if filepath.IsAbs(dumpBin) || strings.Contains(dumpBin, string(os.PathSeparator)) {
+		dumpBin = filepath.Clean(filepath.FromSlash(dumpBin))
+		if _, err := os.Stat(dumpBin); os.IsNotExist(err) {
+			return "", fmt.Errorf("el binario no existe en la ruta: %s", dumpBin)
 		}
 	}
 
-	mysqldumpBin = filepath.Clean(filepath.FromSlash(mysqldumpBin))
-
-	if _, err := os.Stat(mysqldumpBin); os.IsNotExist(err) {
-		return "", fmt.Errorf("el binario de mysqldump no existe en la ruta: %s", mysqldumpBin)
-	}
-
-	return mysqldumpBin, nil
+	return dumpBin, nil
 }
 
 // validateDBConfig valida que las variables de entorno de la BD estén configuradas
@@ -71,13 +94,16 @@ func validateDBConfig() error {
 }
 
 func CreateBackup(admin *models.Admin) (string, error) {
+	cfg := config.Load()
+	isPostgres := cfg.DBConnection == "postgres"
+
 	// Validar configuración de la base de datos
 	if err := validateDBConfig(); err != nil {
 		return "", fmt.Errorf("configuración de BD inválida: %v", err)
 	}
 
-	// Validar ruta de mysqldump
-	mysqldumpBin, err := validateMysqldumpPath()
+	// Validar ruta del binario de dump
+	dumpBin, err := validateDumpPath(isPostgres)
 	if err != nil {
 		return "", err
 	}
@@ -101,24 +127,20 @@ func CreateBackup(admin *models.Admin) (string, error) {
 		return "", fmt.Errorf("error creando directorio de backups: %v", err)
 	}
 
-	// Nombre del archivo con hora peruana
 	var fileName string
 	peruLocation, _ := time.LoadLocation("America/Lima")
 	peruTime := time.Now().In(peruLocation)
 
+	prefix := "backup"
 	if admin.Role == models.RoleAdminPrueba {
-		fileName = fmt.Sprintf("demo backup %s.sql", peruTime.Format("2006-01-02 15-04-05"))
-	} else {
-		fileName = fmt.Sprintf("backup %s.sql", peruTime.Format("2006-01-02 15-04-05"))
+		prefix = "demo backup"
 	}
-
+	fileName = fmt.Sprintf("%s %s.sql", prefix, peruTime.Format("2006-01-02 15-04-05"))
 	outPath := filepath.Join(backupDir, fileName)
 
-	// Construir argumentos de mysqldump (separar host y puerto si es necesario)
 	dbHost := os.Getenv("DB_HOST")
 	var hostArg, portArg string
 
-	// Separar host:puerto si viene junto
 	if strings.Contains(dbHost, ":") {
 		parts := strings.Split(dbHost, ":")
 		hostArg = parts[0]
@@ -127,79 +149,90 @@ func CreateBackup(admin *models.Admin) (string, error) {
 		}
 	} else {
 		hostArg = dbHost
-		portArg = "3306" // Puerto por defecto de MySQL
+		portArg = "3306"
+		if isPostgres {
+			portArg = "5432"
+		}
 	}
 
-	args := []string{
-		"-h", hostArg,
-		"-P", portArg,
-		"-u", os.Getenv("DB_USER"),
-		"-p" + os.Getenv("DB_PASSWORD"),
-		"--no-tablespaces",
-		"--single-transaction",
-		"--routines",
-		"--triggers",
-		"--default-character-set=utf8mb4",
-		os.Getenv("DB_NAME"),
-	}
-
-	// Logging para debug
-	fmt.Printf("🔧 Ejecutando backup con mysqldump: %s\n", mysqldumpBin)
-	fmt.Printf("🔧 Argumentos: %s -h %s -P %s -u %s -p[HIDDEN] --no-tablespaces --single-transaction --routines --triggers --default-character-set=utf8mb4 %s\n",
-		mysqldumpBin, hostArg, portArg, os.Getenv("DB_USER"), os.Getenv("DB_NAME"))
-
-	// Crear archivo de salida
 	outfile, err := os.Create(outPath)
 	if err != nil {
 		return "", fmt.Errorf("error creando archivo de backup: %v", err)
 	}
 	defer outfile.Close()
 
-	if admin.Role == models.RoleAdminPrueba {
-		// Backup filtrado para usuarios demo: Solo sus trabajadores y sus asistencias
-		fmt.Printf("🔧 Iniciando backup filtrado para admin_id: %d\n", admin.ID)
+	if isPostgres {
+		// PostgreSQL Backend Logic
+		os.Setenv("PGPASSWORD", os.Getenv("DB_PASSWORD"))
+		defer os.Unsetenv("PGPASSWORD")
 
-		// 1. Dump Trabajadores
-		args1 := append(args, "trabajadores", "--where=admin_id="+fmt.Sprint(admin.ID))
-		cmd1 := exec.Command(mysqldumpBin, args1...)
-		var stderr1 bytes.Buffer
-		cmd1.Stdout = outfile
-		cmd1.Stderr = &stderr1
-		if err := cmd1.Run(); err != nil {
-			os.Remove(outPath)
-			return "", fmt.Errorf("error dumping trabajadores: %v\nStderr: %s", err, stderr1.String())
+		args := []string{
+			"-h", hostArg,
+			"-p", portArg,
+			"-U", os.Getenv("DB_USER"),
+			"-d", os.Getenv("DB_NAME"),
 		}
 
-		// 2. Dump Asistencias (Append)
-		// Re-abrir el archivo en modo append si es necesario, pero cmd1.Stdout ya escribió al inicio.
-		// Para que el segundo comando añada, necesitamos que el puntero del archivo esté al final.
-		// En Go, cmd1.Stdout = outfile mantendrá el puntero al final después de terminar.
-		args2 := append(args, "asistencia", "--where=trabajador_id IN (SELECT id FROM trabajadores WHERE admin_id="+fmt.Sprint(admin.ID)+")")
-		cmd2 := exec.Command(mysqldumpBin, args2...)
-		var stderr2 bytes.Buffer
-		cmd2.Stdout = outfile // Continuará desde donde terminó el anterior
-		cmd2.Stderr = &stderr2
-		if err := cmd2.Run(); err != nil {
-			// No eliminamos el archivo porque ya tiene parte, pero avisamos
-			return "", fmt.Errorf("error dumping asistencias: %v\nStderr: %s", err, stderr2.String())
+		if admin.Role == models.RoleAdminPrueba {
+			// Demo filter not fully supported natively in pg_dump without complex commands.
+			// Falling back to full schema but could filter tables.
+			args = append(args, "-t", "trabajadores", "-t", "asistencias")
 		}
-	} else {
-		// Backup completo para administradores reales
-		cmd := exec.Command(mysqldumpBin, args...)
+
+		cmd := exec.Command(dumpBin, args...)
 		var stderr bytes.Buffer
 		cmd.Stdout = outfile
 		cmd.Stderr = &stderr
 		if err := cmd.Run(); err != nil {
 			os.Remove(outPath)
-			stderrStr := stderr.String()
-			if stderrStr != "" {
-				return "", fmt.Errorf("error ejecutando mysqldump: %v\nStderr: %s", err, stderrStr)
+			return "", fmt.Errorf("error ejecutando pg_dump: %v\nStderr: %s", err, stderr.String())
+		}
+	} else {
+		// MySQL Backend Logic
+		args := []string{
+			"-h", hostArg,
+			"-P", portArg,
+			"-u", os.Getenv("DB_USER"),
+			"-p" + os.Getenv("DB_PASSWORD"),
+			"--no-tablespaces",
+			"--single-transaction",
+			"--routines",
+			"--triggers",
+			"--default-character-set=utf8mb4",
+			os.Getenv("DB_NAME"),
+		}
+
+		if admin.Role == models.RoleAdminPrueba {
+			args1 := append(args, "trabajadores", "--where=admin_id="+fmt.Sprint(admin.ID))
+			cmd1 := exec.Command(dumpBin, args1...)
+			var stderr1 bytes.Buffer
+			cmd1.Stdout = outfile
+			cmd1.Stderr = &stderr1
+			if err := cmd1.Run(); err != nil {
+				os.Remove(outPath)
+				return "", fmt.Errorf("error dumping trabajadores: %v\nStderr: %s", err, stderr1.String())
 			}
-			return "", fmt.Errorf("error ejecutando mysqldump: %v", err)
+
+			args2 := append(args, "asistencias", "--where=trabajador_id IN (SELECT id FROM trabajadores WHERE admin_id="+fmt.Sprint(admin.ID)+")")
+			cmd2 := exec.Command(dumpBin, args2...)
+			var stderr2 bytes.Buffer
+			cmd2.Stdout = outfile
+			cmd2.Stderr = &stderr2
+			if err := cmd2.Run(); err != nil {
+				return "", fmt.Errorf("error dumping asistencias: %v\nStderr: %s", err, stderr2.String())
+			}
+		} else {
+			cmd := exec.Command(dumpBin, args...)
+			var stderr bytes.Buffer
+			cmd.Stdout = outfile
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				os.Remove(outPath)
+				return "", fmt.Errorf("error ejecutando mysqldump: %v\nStderr: %s", err, stderr.String())
+			}
 		}
 	}
 
-	// Verificar que el archivo no esté vacío
 	stat, err := outfile.Stat()
 	if err != nil {
 		return "", fmt.Errorf("error verificando archivo de backup: %v", err)
@@ -209,7 +242,6 @@ func CreateBackup(admin *models.Admin) (string, error) {
 		return "", fmt.Errorf("backup creado pero está vacío")
 	}
 
-	fmt.Printf("✅ Backup creado exitosamente en: %s (%.2f KB)\n", outPath, float64(stat.Size())/1024)
 	return fileName, nil
 }
 

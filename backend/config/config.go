@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	DBConnection  string
 	DBUser        string
 	DBPassword    string
 	DBHost        string
@@ -24,6 +25,7 @@ func Load() *Config {
 	_ = godotenv.Load()
 
 	return &Config{
+		DBConnection:  getEnv("DB_CONNECTION", "mysql"),
 		DBUser:        getEnv("DB_USER", ""),
 		DBPassword:    getEnv("DB_PASSWORD", ""),
 		DBHost:        getEnv("DB_HOST", "localhost:3306"),

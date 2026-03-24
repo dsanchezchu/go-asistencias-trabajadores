@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+
+  // @ts-ignore - Turbopack config structure may not be fully typed in the active version
+  turbopack: {
+    root: '../',
+  },
 };
 
 export default nextConfig;
