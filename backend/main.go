@@ -11,47 +11,23 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
-	cfg := config.Load()
-	database.Connect(cfg)
+func setupRoutes(r *gin.Engine, settingsHandler *handlers.SettingsHandler) {
+	// CORS y otras configuraciones globales se heredan de r
+	registerAPI := func(rg *gin.RouterGroup) {
+		rg.POST("/login", handlers.Login)
+		rg.POST("/register", handlers.Register)
 
-	userRepo := repositories.NewGormUserRepository(database.DB)
-	userService := services.NewUserService(userRepo)
-	settingsHandler := handlers.NewSettingsHandler(userService)
-
-	r := gin.Default()
-
-	r.Use(func(c *gin.Context) {
-		log.Printf("Petición %s %s desde origin: %s", c.Request.Method, c.Request.URL.Path, c.GetHeader("Origin"))
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
-		c.Header("Access-Control-Max-Age", "86400")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	})
-
-	api := r.Group("/api")
-	{
-		api.POST("/login", handlers.Login)
-		api.POST("/register", handlers.Register)
-
-		protected := api.Group("")
+		protected := rg.Group("")
 		protected.Use(middleware.AuthMiddleware())
 		{
 			protected.GET("/me", handlers.GetMe)
 			protected.PATCH("/user/settings", settingsHandler.UpdateSettings)
 			protected.GET("/reniec", handlers.ConsultarReniec)
-
 			protected.GET("/demo/status", handlers.GetDemoStatus)
 			protected.POST("/demo/request-access", handlers.RequestAccess)
 
@@ -67,43 +43,66 @@ func main() {
 			{
 				modulesGroup.GET("/trabajadores", handlers.GetTrabajadores)
 				modulesGroup.GET("/trabajadores/:id", handlers.GetTrabajador)
-
 				trabajadoresLimited := modulesGroup.Group("")
 				trabajadoresLimited.Use(middleware.DemoLimitTrabajadores())
 				{
 					trabajadoresLimited.POST("/trabajadores", handlers.CreateTrabajador)
 				}
-
 				trabajadoresActions := modulesGroup.Group("")
 				trabajadoresActions.Use(middleware.DemoLimitAsistencias())
 				{
 					trabajadoresActions.PUT("/trabajadores/:id", handlers.UpdateTrabajador)
 					trabajadoresActions.DELETE("/trabajadores/:id", handlers.DeleteTrabajador)
 				}
-
 				modulesGroup.GET("/asistencias", handlers.GetAllAsistencias)
 				modulesGroup.GET("/asistencias/fecha", handlers.GetAsistenciasByDate)
-
 				asistenciasLimited := modulesGroup.Group("")
 				asistenciasLimited.Use(middleware.DemoLimitAsistenciasStrict())
 				{
 					asistenciasLimited.POST("/asistencias", handlers.CreateAsistencia)
 					asistenciasLimited.POST("/asistencias/batch", handlers.BatchUpdateAsistencias)
 				}
-
 				modulesGroup.GET("/backups/list", handlers.ListBackups)
 				modulesGroup.GET("/backups/download/:filename", handlers.DownloadBackup)
-
 				backupsLimited := modulesGroup.Group("")
 				backupsLimited.Use(middleware.DemoLimitBackups())
 				{
 					backupsLimited.POST("/backups/create", handlers.CreateBackup)
 				}
 			}
-
 			protected.POST("/demo/reset", handlers.ResetDemo)
 		}
 	}
+
+	// Registrar rutas originales y con prefijo de Cloudflare
+	basePath := "/proyectos/asistencias"
+	registerAPI(r.Group("/api"))
+	registerAPI(r.Group(basePath + "/api"))
+}
+
+func main() {
+	cfg := config.Load()
+	database.Connect(cfg)
+
+	userRepo := repositories.NewGormUserRepository(database.DB)
+	userService := services.NewUserService(userRepo)
+	settingsHandler := handlers.NewSettingsHandler(userService)
+
+	r := gin.Default()
+
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
+		c.Header("Access-Control-Max-Age", "86400")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
+
+	setupRoutes(r, settingsHandler)
 
 	staticPath := filepath.Join(".", "frontend", "out")
 	basePath := "/proyectos/asistencias"
@@ -122,7 +121,8 @@ func main() {
 		r.StaticFile("/robots.txt", filepath.Join(staticPath, "robots.txt"))
 
 		r.NoRoute(func(c *gin.Context) {
-			if len(c.Request.URL.Path) > 4 && c.Request.URL.Path[:4] == "/api" {
+			path := c.Request.URL.Path
+			if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, basePath+"/api") {
 				c.JSON(http.StatusNotFound, gin.H{"error": "API endpoint not found"})
 				return
 			}
@@ -138,3 +138,4 @@ func main() {
 	log.Printf("Servidor iniciado en el puerto %s", cfg.Port)
 	r.Run(":" + cfg.Port)
 }
+
