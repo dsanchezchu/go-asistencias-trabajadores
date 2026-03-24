@@ -1,0 +1,30 @@
+services:
+  backend:
+    image: ${DOCKER_USER}/asistencias-backend:latest
+    container_name: asistencias-backend
+    ports:
+      - "${BACKEND_PORT:-8050}:8050" 
+    env_file:
+      - ./backend/.env
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M      # Suficiente para el backend en Go
+          cpus: '0.40'
+        reservations:
+          memory: 128M
+
+  frontend:
+    image: ${DOCKER_USER}/asistencias-frontend:latest
+    container_name: asistencias-frontend
+    ports:
+      - "${FRONTEND_PORT:-3046}:3000"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1024M     # Next.js standalone requiere un poco más
+          cpus: '0.50'
+        reservations:
+          memory: 256M

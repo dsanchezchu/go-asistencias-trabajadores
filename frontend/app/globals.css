@@ -1,0 +1,199 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-focus: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-neutral: var(--foreground);
+  --color-base-100: var(--base-100);
+  --color-base-200: var(--base-200);
+  --color-base-300: var(--base-300);
+
+  --radius-box: 1.5rem;
+  --radius-btn: 0.75rem;
+
+  --animate-aurora: aurora 60s linear infinite;
+  --animate-nebula-float: nebula-float 20s ease-in-out infinite;
+  --animate-nebula-slow: nebula-slow 25s ease-in-out infinite;
+  --animate-nebula-fast: nebula-fast 15s ease-in-out infinite;
+
+  @keyframes aurora {
+    from {
+      background-position: 50% 50%, 50% 50%;
+    }
+    to {
+      background-position: 350% 50%, 350% 50%;
+    }
+  }
+
+  @keyframes nebula-float {
+    0%, 100% { transform: translate(0, 0) scale(1.5); }
+    33% { transform: translate(5%, -5%) scale(1.6); }
+    66% { transform: translate(-5%, 5%) scale(1.4); }
+  }
+
+  @keyframes nebula-slow {
+    0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1.2); }
+    50% { transform: translate(-10%, 10%) rotate(10deg) scale(1.4); }
+  }
+
+  @keyframes nebula-fast {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(15%, 15%) scale(1.3); }
+  }
+}
+
+:root {
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
+  --base-100: #ffffff;
+  --base-200: #f1f5f9; /* slate-100 */
+  --base-300: #e2e8f0; /* slate-200 */
+  --primary: #2563eb; /* blue-600 */
+  --primary-content: #ffffff;
+  --secondary: #0ea5e9; /* sky-500 */
+  --accent: #4f46e5; /* indigo-600 */
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(226, 232, 240, 0.8);
+  --glass-blur: blur(12px);
+  --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+[data-theme='dark'], .dark {
+  --background: #020617;
+  --foreground: #f1f5f9;
+  --base-100: #0f172a;
+  --base-200: #1e293b;
+  --base-300: #334155;
+  --primary: #3b82f6; /* blue-500 */
+  --secondary: #38bdf8; /* sky-400 */
+  --accent: #818cf8; /* indigo-400 */
+  --glass-bg: rgba(15, 23, 42, 0.7);
+  --glass-border: rgba(148, 163, 184, 0.08);
+  --glass-blur: blur(12px);
+  --card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--card-shadow);
+  @apply transition-colors duration-300;
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .glass-card {
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.011em;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Scrollbar refinement */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--base-300);
+  border-radius: 10px;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: var(--base-200);
+}
+
+/* Subtle accent lighting (Professional Gradient) */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 0% 0%, var(--primary), transparent 25%),
+    radial-gradient(circle at 100% 100%, #6366f1, transparent 25%);
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: -1;
+}
+
+[data-theme='dark'] body::before {
+  opacity: 0.05;
+}
+.animate-fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Fix: much smaller, centered spinner for DaisyUI buttons to avoid overflow */
+.btn.loading {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  padding-left: 2.5rem; /* reserve space for spinner */
+}
+
+.btn.loading::before,
+.btn.loading:before {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+  width: 0.875rem; /* 14px */
+  height: 0.875rem;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: currentColor;
+  animation: small-spin 0.9s linear infinite;
+}
+
+/* Hide any extra pseudo-element daisy might create to avoid large arcs */
+.btn.loading::after {
+  display: none !important;
+}
+
+@keyframes small-spin {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
