@@ -24,6 +24,7 @@ import { ThemeSwitcher } from '../shared/ThemeSwitcher'
 import { demoService } from '@/services/demoService'
 import { useDemoContext } from '@/context/DemoContext'
 import { useAdminFilter } from '@/context/AdminFilterContext'
+import { BASE_PATH } from '@/config'
 
 const Sidebar = () => {
     const pathname = usePathname()
@@ -81,18 +82,17 @@ const Sidebar = () => {
         if (result.isConfirmed) {
             setIsRequestingAccess(true)
             try {
-                await demoService.requestAccess()
-                await Swal.fire({
-                    title: '¡Solicitud Enviada!',
-                    text: 'Tu solicitud de acceso ha sido enviada al administrador. Te contactaremos pronto.',
-                    icon: 'success'
-                })
-            } catch (error: unknown) {
-                const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+                const response = await demoService.requestAccess()
                 Swal.fire({
+                    icon: 'success',
+                    title: 'Solicitud Enviada',
+                    text: response.msg
+                })
+            } catch (error: any) {
+                Swal.fire({
+                    icon: 'error',
                     title: 'Error',
-                    text: errorMessage,
-                    icon: 'error'
+                    text: error.message || 'No se pudo enviar la solicitud'
                 })
             } finally {
                 setIsRequestingAccess(false)
@@ -138,7 +138,7 @@ const Sidebar = () => {
                 router.refresh()
             } catch (error: unknown) {
                 const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-                Swal.fire({
+                await Swal.fire({
                     title: 'Error',
                     text: errorMessage,
                     icon: 'error'
@@ -185,12 +185,12 @@ const Sidebar = () => {
                     <div className={`p-4 flex items-center ${isCollapsed ? 'flex-col gap-4' : 'justify-between'}`}>
                         {isCollapsed ? (
                             <div className="p-1 rounded-xl bg-base-200 border border-base-300 flex items-center justify-center shadow-sm">
-                                <img src="/favicon.ico" alt="Go Asistencias" className="w-7 h-7" />
+                                <img src={`${BASE_PATH}/favicon.ico`} alt="Go Asistencias" className="w-7 h-7" />
                             </div>
                         ) : (
                             <div className="flex items-center gap-2 animate-fade-in pl-2">
                                 <div className="p-1 rounded-xl bg-base-200 border border-base-300 flex items-center justify-center shadow-sm">
-                                    <img src="/favicon.ico" alt="Go Asistencias" className="w-7 h-7" />
+                                    <img src={`${BASE_PATH}/favicon.ico`} alt="Go Asistencias" className="w-7 h-7" />
                                 </div>
                                 <span className="font-black text-[11px] text-foreground tracking-widest uppercase leading-tight">ASISTENCIAS<br/>GO ASISTENCIAS</span>
                             </div>

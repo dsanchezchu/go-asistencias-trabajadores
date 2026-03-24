@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Home, ArrowLeft, Search, Users, CalendarCheck2, Database } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { BASE_PATH } from '@/config'
 
 export default function NotFound() {
     const router = useRouter()
@@ -35,7 +36,7 @@ export default function NotFound() {
                 {/* Logo & Brand */}
                 <div className="flex items-center justify-center gap-3 mb-8 animate-fade-in">
                     <div className="p-3 rounded-2xl bg-base-200 border border-base-300 flex items-center justify-center shadow-xl">
-                        <img src="/favicon.ico" alt="Go Asistencias" className="w-10 h-10" />
+                        <img src={`${BASE_PATH}/favicon.ico`} alt="Go Asistencias" className="w-10 h-10" />
                     </div>
                     <div className="text-left">
                         <h1 className="font-black text-lg text-foreground tracking-widest uppercase leading-tight">GO ASISTENCIAS</h1>

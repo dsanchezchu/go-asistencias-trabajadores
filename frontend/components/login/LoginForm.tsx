@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
-import { API_URL } from '@/config'
+import { API_URL, BASE_PATH } from '@/config'
 
 export default function LoginForm() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
@@ -51,7 +51,7 @@ export default function LoginForm() {
       <div className="glass-card p-8 md:p-10 rounded-3xl relative overflow-hidden shadow-2xl border border-white/20 dark:border-white/5">
         <div className="relative z-10 text-center">
           <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl backdrop-blur-md border border-primary/20 transition-transform hover:scale-110">
-            <img src="/favicon.ico" alt="Go Asistencias Logo" className="w-10 h-10 transition-all" />
+            <img src={`${BASE_PATH}/favicon.ico`} alt="Go Asistencias Logo" className="w-10 h-10 transition-all" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 text-foreground">GO ASISTENCIAS <span className="text-primary italic">APP</span></h1>
           <p className="text-foreground/50 mb-10 font-bold tracking-[0.2em] uppercase text-[9px]">Uso del area de sistemas</p>
