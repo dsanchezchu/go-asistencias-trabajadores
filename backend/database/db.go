@@ -5,6 +5,7 @@ import (
 	"go-asistencias/backend/config"
 	"go-asistencias/backend/models"
 	"log"
+	"strings"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -19,8 +20,19 @@ func Connect(cfg *config.Config) {
 	var dialector gorm.Dialector
 
 	if cfg.DBConnection == "postgres" {
-		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=5432 sslmode=require TimeZone=America/Lima",
-			cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName)
+		host := cfg.DBHost
+		port := "5432"
+		
+		if strings.Contains(cfg.DBHost, ":") {
+			parts := strings.Split(cfg.DBHost, ":")
+			host = parts[0]
+			if len(parts) > 1 {
+				port = parts[1]
+			}
+		}
+
+		dsn = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=require TimeZone=America/Lima",
+			host, port, cfg.DBUser, cfg.DBPassword, cfg.DBName)
 		dialector = postgres.Open(dsn)
 	} else {
 		// Por defecto mysql
