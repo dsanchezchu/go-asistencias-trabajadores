@@ -89,8 +89,15 @@ func main() {
 	settingsHandler := handlers.NewSettingsHandler(userService)
 
 	r := gin.Default()
+	
+	// Confiar en todos los proxies (Heroku y Cloudflare) para resolver la IP real
+	r.SetTrustedProxies(nil)
+	r.ForwardedByClientIP = true
 
 	r.Use(func(c *gin.Context) {
+		clientIP := c.ClientIP()
+		log.Printf("🛣️ [ROUTE ACCESS] %s %s | IP: %s | Origin: %s", c.Request.Method, c.Request.URL.Path, clientIP, c.GetHeader("Origin"))
+
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
@@ -130,11 +137,15 @@ func main() {
 
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
-			if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, basePath+"/api") {
-				c.JSON(http.StatusNotFound, gin.H{"error": "API endpoint not found"})
+			
+			// Si es un request de un asset de Next.js (CSS, JS, media) que no existe (ej. por cache vieja),
+			// no mandamos el index.html sino un 404 real para evitar SyntaxError '<' en el navegador.
+			if strings.Contains(path, "/_next/") || strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".css") || strings.HasPrefix(path, "/api") || strings.HasPrefix(path, basePath+"/api") {
+				c.Status(http.StatusNotFound)
 				return
 			}
-			// Si la ruta empieza con el basePath o es la raíz, servimos el frontend
+			
+			// Para navegación reactiva normal, servimos la APP.
 			if strings.HasPrefix(path, basePath) || path == "/" {
 				c.File(filepath.Join(staticPath, "index.html"))
 				return
