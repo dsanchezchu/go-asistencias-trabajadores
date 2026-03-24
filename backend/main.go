@@ -125,8 +125,9 @@ func main() {
 	// Servir archivos estáticos del frontend
 	staticPath := filepath.Join(".", "frontend", "out")
 	if _, err := os.Stat(staticPath); err == nil {
-		// Servir archivos estáticos de Next.js
-		r.Static("/static", filepath.Join(staticPath, "static"))
+		// Servir archivos estáticos de Next.js (/_next/...)
+		r.Static("/_next", filepath.Join(staticPath, "_next"))
+		r.Static("/images", filepath.Join(staticPath, "images")) // Si hay imagenes
 		r.StaticFile("/favicon.ico", filepath.Join(staticPath, "favicon.ico"))
 		r.StaticFile("/manifest.json", filepath.Join(staticPath, "manifest.json"))
 		r.StaticFile("/robots.txt", filepath.Join(staticPath, "robots.txt"))
