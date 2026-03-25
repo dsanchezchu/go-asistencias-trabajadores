@@ -90,13 +90,12 @@ func main() {
 
 	r := gin.Default()
 
-	// Confiar en todos los proxies (Heroku y Cloudflare) para resolver la IP real
 	r.SetTrustedProxies(nil)
 	r.ForwardedByClientIP = true
 
 	r.Use(func(c *gin.Context) {
 		clientIP := c.ClientIP()
-		log.Printf("🛣️ [ROUTE ACCESS] %s %s | IP: %s | Origin: %s", c.Request.Method, c.Request.URL.Path, clientIP, c.GetHeader("Origin"))
+		log.Printf("[ROUTE ACCESS] %s %s | IP: %s | Origin: %s", c.Request.Method, c.Request.URL.Path, clientIP, c.GetHeader("Origin"))
 
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
@@ -130,33 +129,28 @@ func main() {
 
 			fullPath := filepath.Join(staticPath, localPath)
 
-			// 1. Try exact file
 			if info, err := os.Stat(fullPath); err == nil && !info.IsDir() {
 				c.File(fullPath)
 				return
 			}
 
-			// 2. Try .html extension
 			fullPathHtml := fullPath + ".html"
 			if info, err := os.Stat(fullPathHtml); err == nil && !info.IsDir() {
 				c.File(fullPathHtml)
 				return
 			}
 
-			// 3. Try /index.html (for trailingSlash: true routes)
 			fullPathIndex := filepath.Join(fullPath, "index.html")
 			if info, err := os.Stat(fullPathIndex); err == nil && !info.IsDir() {
 				c.File(fullPathIndex)
 				return
 			}
 
-			// 4. Missing Next.js assets should 404, not fallback to HTML
 			if strings.Contains(localPath, "/_next/") || strings.Contains(localPath, ".") {
 				c.Status(http.StatusNotFound)
 				return
 			}
 
-			// 5. Ultimate fallback for base routes SPA behavior
 			c.File(filepath.Join(staticPath, "index.html"))
 		})
 	} else {

@@ -47,7 +47,7 @@ func getEnvOrDefault(key, defaultValue string) string {
 func (e *EmailService) SendAccessRequest(req EmailRequest) error {
 	if e.SMTPUser == "" || e.SMTPPassword == "" {
 		// Si no hay configuración de SMTP, solo logueamos la solicitud
-		fmt.Printf("📧 SOLICITUD DE ACCESO RECIBIDA:\n")
+		fmt.Printf("SOLICITUD DE ACCESO RECIBIDA:\n")
 		fmt.Printf("Usuario: %s\n", req.Username)
 		fmt.Printf("Fecha de registro: %s\n", req.RegistrationDate.Format("2006-01-02 15:04:05"))
 		fmt.Printf("Progreso demo:\n")
@@ -59,7 +59,7 @@ func (e *EmailService) SendAccessRequest(req EmailRequest) error {
 		return nil
 	}
 
-	subject := "🚀 Nueva Solicitud de Acceso - Sistema de Asistencias"
+	subject := "Nueva Solicitud de Acceso - Sistema de Asistencias"
 	body := e.buildEmailTemplate(req)
 
 	auth := smtp.PlainAuth("", e.SMTPUser, e.SMTPPassword, e.SMTPHost)
@@ -72,11 +72,11 @@ func (e *EmailService) SendAccessRequest(req EmailRequest) error {
 
 	err := smtp.SendMail(e.SMTPHost+":"+e.SMTPPort, auth, e.SMTPUser, []string{e.AdminEmail}, []byte(msg))
 	if err != nil {
-		fmt.Printf("❌ Error enviando correo: %v\n", err)
+		fmt.Printf("Error enviando correo: %v\n", err)
 		return err
 	}
 
-	fmt.Printf("✅ Correo enviado exitosamente a %s\n", e.AdminEmail)
+	fmt.Printf("Correo enviado exitosamente a %s\n", e.AdminEmail)
 	return nil
 }
 
@@ -229,4 +229,131 @@ func getStatusColor(req EmailRequest) string {
 		return "#ef4444" // red
 	}
 	return "#10b981" // green
+}
+
+func (e *EmailService) SendRegistrationNotification(username string) error {
+	if e.SMTPUser == "" || e.SMTPPassword == "" {
+		fmt.Printf("NUEVO USUARIO REGISTRADO: %s\n", username)
+		return nil
+	}
+
+	subject := "Nuevo Registro Pendiente de Aprobaci\u00f3n"
+	body := e.buildRegistrationEmailTemplate(username)
+
+	auth := smtp.PlainAuth("", e.SMTPUser, e.SMTPPassword, e.SMTPHost)
+
+	msg := fmt.Sprintf("From: %s\r\n", e.SMTPUser) +
+		fmt.Sprintf("To: %s\r\n", e.AdminEmail) +
+		fmt.Sprintf("Subject: %s\r\n", subject) +
+		"Content-Type: text/html; charset=UTF-8\r\n" +
+		"\r\n" + body
+
+	err := smtp.SendMail(e.SMTPHost+":"+e.SMTPPort, auth, e.SMTPUser, []string{e.AdminEmail}, []byte(msg))
+	if err != nil {
+		fmt.Printf("Error enviando correo de registro: %v\n", err)
+		return err
+	}
+
+	fmt.Printf("Correo de nuevo registro enviado a %s\n", e.AdminEmail)
+	return nil
+}
+
+func (e *EmailService) buildRegistrationEmailTemplate(username string) string {
+	primaryColor := "#10b981" // Green color to symbolize a new user
+	
+	template := `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; line-height: 1.6; color: #1f2937; background-color: #f4f7fa; margin: 0; padding: 0; }
+        .wrapper { width: 100%%; table-layout: fixed; background-color: #f4f7fa; padding-bottom: 40px; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
+        
+        /* Header */
+        .header { background-color: ` + primaryColor + `; padding: 40px 20px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 22px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+        .header p { color: #dbeafe; margin: 10px 0 0; font-size: 14px; opacity: 0.9; }
+
+        /* Content */
+        .content { padding: 40px; }
+        .message-box { background-color: #f8fafc; border-left: 4px solid ` + primaryColor + `; padding: 20px; border-radius: 4px; margin-bottom: 30px; }
+        .message-box p { margin: 0; font-size: 15px; }
+        
+        /* User Info Table */
+        .info-table { width: 100%%; margin-bottom: 30px; border-collapse: collapse; }
+        .info-table td { padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+        .label { color: #6b7280; font-size: 14px; width: 40%%; }
+        .value { color: #111827; font-size: 14px; font-weight: bold; text-align: right; }
+
+        /* Status Badge */
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #ffffff; background-color: #f59e0b; }
+
+        /* CTA */
+        .cta-container { text-align: center; margin-top: 20px; }
+        .btn { background-color: ` + primaryColor + `; color: #ffffff !important; padding: 14px 28px; text-decoration: none; border-radius: 5px; font-size: 14px; font-weight: 600; display: inline-block; }
+        
+        /* Footer */
+        .footer { background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb; }
+        .footer p { margin: 0; font-size: 12px; color: #9ca3af; }
+        .footer-brand { font-weight: 600; color: #4b5563; margin-bottom: 5px !important; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <div class="header">
+                <h1>Nuevo Registro de Usuario</h1>
+                <p>Alerta de Sistema - Plataforma de Asistencias</p>
+            </div>
+
+            <div class="content">
+                <div class="message-box">
+                    <p>Un nuevo usuario ha completado el formulario de registro y está <strong>esperando tu aprobación manual</strong> para acceder a la plataforma.</p>
+                </div>
+
+                <table class="info-table">
+                    <tr>
+                        <td class="label">Nombre de Usuario</td>
+                        <td class="value">%s</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Rol Solicitado</td>
+                        <td class="value">admin_prueba (Predeterminado)</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Fecha de Solicitud</td>
+                        <td class="value">%s</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Estado Actual</td>
+                        <td class="value"><span class="status-badge">Pendiente de Aprobación</span></td>
+                    </tr>
+                </table>
+
+                <div class="cta-container">
+                    <a href="https://app-asistencias-dorian-9685c6f6d9a7.herokuapp.com/proyectos/asistencias/admin/demo-users" class="btn">
+                        Revisar y Aprobar Usuario
+                    </a>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p class="footer-brand">Go Asistencias App</p>
+                <p>Este es un mensaje institucional generado automáticamente por el servidor.</p>
+                <p>Fecha de emisión: %s</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+`
+
+	return fmt.Sprintf(template,
+		username,
+		time.Now().Format("02/01/2006 15:04"),
+		time.Now().Format("02/01/2006 15:04"),
+	)
 }

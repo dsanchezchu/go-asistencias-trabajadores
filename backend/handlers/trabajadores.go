@@ -102,12 +102,12 @@ func GetTrabajadores(c *gin.Context) {
 	for i := range trabajadores {
 		t := &trabajadores[i]
 
-		// Calcular Horas Reales (1 día presente = 4 horas, tardanza descuenta proporcionalmente)
 		reales := 0.0
 		for _, a := range t.Asistencias {
-			if a.Estado == "presente" {
+			switch a.Estado {
+			case "presente":
 				reales += 4.0
-			} else if a.Estado == "tardanza" {
+			case "tardanza":
 				discount := float64(a.MinutosTardanza) / 60.0
 				ganadas := 4.0 - discount
 				if ganadas < 0 {
@@ -155,9 +155,10 @@ func GetTrabajador(c *gin.Context) {
 	// Calcular Horas Reales (1 día presente = 4 horas, tardanza descuenta proporcionalmente)
 	reales := 0.0
 	for _, a := range t.Asistencias {
-		if a.Estado == "presente" {
+		switch a.Estado {
+		case "presente":
 			reales += 4.0
-		} else if a.Estado == "tardanza" {
+		case "tardanza":
 			discount := float64(a.MinutosTardanza) / 60.0
 			ganadas := 4.0 - discount
 			if ganadas < 0 {
@@ -248,8 +249,8 @@ func DeleteTrabajador(c *gin.Context) {
 	// Los usuarios admin_prueba NO pueden eliminar trabajadores
 	if currentAdmin.Role == models.RoleAdminPrueba {
 		c.JSON(http.StatusForbidden, gin.H{
-			"error": "Los usuarios demo no pueden eliminar trabajadores. Solo pueden crear y editar.",
-			"type":  "DEMO_NO_DELETE",
+			"error":    "Los usuarios demo no pueden eliminar trabajadores. Solo pueden crear y editar.",
+			"type":     "DEMO_NO_DELETE",
 			"demoInfo": currentAdmin.GetDemoStatus(),
 		})
 		return
@@ -289,10 +290,10 @@ func DeleteTrabajador(c *gin.Context) {
 		if newCount >= 2 {
 			tx.Commit()
 			c.JSON(http.StatusOK, gin.H{
-				"msg": "Trabajador eliminado correctamente",
-				"warning": "⚠️ Has alcanzado el límite de eliminaciones (2/2). Los módulos Trabajadores, Asistencias y Backups han sido bloqueados.",
+				"msg":             "Trabajador eliminado correctamente",
+				"warning":         "⚠️ Has alcanzado el límite de eliminaciones (2/2). Los módulos Trabajadores, Asistencias y Backups han sido bloqueados.",
 				"modules_blocked": true,
-				"eliminaciones": newCount,
+				"eliminaciones":   newCount,
 			})
 			return
 		}

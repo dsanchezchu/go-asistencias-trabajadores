@@ -116,5 +116,10 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	go func() {
+		emailService := services.NewEmailService()
+		emailService.SendRegistrationNotification(admin.Username)
+	}()
+
 	c.JSON(http.StatusOK, gin.H{"msg": "Registro exitoso. Espere la aprobación manual del administrador."})
 }
