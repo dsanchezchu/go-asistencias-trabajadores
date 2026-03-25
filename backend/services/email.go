@@ -260,7 +260,7 @@ func (e *EmailService) SendRegistrationNotification(username string) error {
 
 func (e *EmailService) buildRegistrationEmailTemplate(username string) string {
 	primaryColor := "#10b981" // Green color to symbolize a new user
-	
+
 	template := `
 <!DOCTYPE html>
 <html lang="es">
@@ -334,7 +334,7 @@ func (e *EmailService) buildRegistrationEmailTemplate(username string) string {
                 </table>
 
                 <div class="cta-container">
-                    <a href="https://app-asistencias-dorian-9685c6f6d9a7.herokuapp.com/proyectos/asistencias/admin/demo-users" class="btn">
+                    <a href="https://diegosanchezchu.is-a.dev/proyectos/asistencias" class="btn">
                         Revisar y Aprobar Usuario
                     </a>
                 </div>

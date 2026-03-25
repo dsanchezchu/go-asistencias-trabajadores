@@ -132,7 +132,7 @@ export default function LoginForm() {
           </div>
         </div>
       </div>
-      <p className="text-center mt-8 text-foreground/30 text-[9px] font-black uppercase tracking-[0.3em]">&copy; 2026 GO ASISTENCIAS &bull; AREA DE SISTEMAS GO ASISTENCIAS</p>
+      <p className="text-center mt-8 text-foreground/30 text-[9px] font-black uppercase tracking-[0.3em]">&copy; 2026 GO ASISTENCIAS &bull; ING DIEGO SANCHEZ C.</p>
     </div>
   )
 }
