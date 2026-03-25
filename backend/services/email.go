@@ -85,6 +85,9 @@ func (e *EmailService) buildEmailTemplate(req EmailRequest) string {
 	statusColor := getStatusColor(req)
 	primaryColor := "#3962a5"
 
+	loc, _ := time.LoadLocation("America/Lima")
+	now := time.Now().In(loc)
+
 	template := `
 <!DOCTYPE html>
 <html lang="es">
@@ -201,13 +204,13 @@ func (e *EmailService) buildEmailTemplate(req EmailRequest) string {
 		statusColor,
 		req.Username,
 		req.Role,
-		req.RegistrationDate.Format("02/01/2006 15:04"),
+		req.RegistrationDate.In(loc).Format("02/01/2006 15:04"),
 		status,
 		req.TrabajadoresCreados,
 		req.AsistenciasCreadas,
 		req.BackupsCreados,
 		req.Eliminaciones,
-		time.Now().Format("02/01/2006 15:04"),
+		now.Format("02/01/2006 15:04"),
 	)
 }
 
@@ -260,6 +263,10 @@ func (e *EmailService) SendRegistrationNotification(username string) error {
 
 func (e *EmailService) buildRegistrationEmailTemplate(username string) string {
 	primaryColor := "#10b981" // Green color to symbolize a new user
+
+	// Configurar zona horaria de Perú
+	loc, _ := time.LoadLocation("America/Lima")
+	now := time.Now().In(loc)
 
 	template := `
 <!DOCTYPE html>
@@ -342,7 +349,7 @@ func (e *EmailService) buildRegistrationEmailTemplate(username string) string {
 
             <div class="footer">
                 <p class="footer-brand">Go Asistencias App</p>
-                <p>Este es un mensaje institucional generado automáticamente por el servidor.</p>
+                <p>Este es un mensaje fue generado por el servidor.</p>
                 <p>Fecha de emisión: %s</p>
             </div>
         </div>
@@ -353,7 +360,7 @@ func (e *EmailService) buildRegistrationEmailTemplate(username string) string {
 
 	return fmt.Sprintf(template,
 		username,
-		time.Now().Format("02/01/2006 15:04"),
-		time.Now().Format("02/01/2006 15:04"),
+		now.Format("02/01/2006 15:04"),
+		now.Format("02/01/2006 15:04"),
 	)
 }
