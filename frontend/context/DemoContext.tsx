@@ -14,10 +14,13 @@ const DemoContext = createContext<DemoContextType | null>(null)
 
 export function DemoProvider({ children }: { children: ReactNode }) {
   const [demoStatus, setDemoStatus] = useState<DemoStatus | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isFirstLoad, setIsFirstLoad] = useState(true)
 
   const refreshDemoStatus = useCallback(async () => {
-    setIsLoading(true)
+    // Si no es la primera carga, no mostramos el estado de carga global para evitar parpadeos
+    if (!isFirstLoad) setIsLoading(true)
+    
     try {
       const status = await demoService.getStatus()
       setDemoStatus(status)
@@ -25,12 +28,19 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       console.error('Error fetching demo status:', error)
     } finally {
       setIsLoading(false)
+      setIsFirstLoad(false)
     }
-  }, [])
+  }, [isFirstLoad])
 
   useEffect(() => {
-    refreshDemoStatus()
-  }, [refreshDemoStatus])
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    if (token) {
+      refreshDemoStatus()
+    } else {
+      setIsLoading(false)
+      setIsFirstLoad(false)
+    }
+  }, []) // Solo al montar
 
   return (
     <DemoContext.Provider value={{ demoStatus, refreshDemoStatus, isLoading }}>

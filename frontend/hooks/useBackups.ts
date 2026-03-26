@@ -2,23 +2,27 @@ import { useState, useEffect, useCallback } from 'react'
 import Swal from 'sweetalert2'
 import { backupService } from '@/services/backupService'
 import { useDemoContext } from '@/context/DemoContext'
+import { useAdminFilter } from '@/context/AdminFilterContext'
 
 export function useBackups() {
-    const { refreshDemoStatus } = useDemoContext()
+    const { refreshDemoStatus, demoStatus } = useDemoContext()
+    const { selectedDemoUser } = demoStatus?.role === 'admin' ? useAdminFilter() : { selectedDemoUser: null }
+    
     const [backups, setBackups] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
     const [initLoading, setInitLoading] = useState(true)
 
     const fetchBackups = useCallback(async () => {
         try {
-            const data = await backupService.listBackups()
+            const userId = selectedDemoUser?.id?.toString()
+            const data = await backupService.listBackups(userId)
             setBackups(data)
         } catch (error) {
             console.error('Error fetching backups:', error)
         } finally {
             setInitLoading(false)
         }
-    }, [])
+    }, [selectedDemoUser])
 
     useEffect(() => { 
         fetchBackups() 
@@ -60,7 +64,8 @@ export function useBackups() {
     const downloadBackup = async (f: string) => {
         setLoading(true)
         try {
-            await backupService.downloadBackup(f)
+            const userId = selectedDemoUser?.id?.toString()
+            await backupService.downloadBackup(f, userId)
         } catch (error: any) {
             console.error('Error downloading backup:', error)
             Swal.fire({ icon: 'error', title: 'Error', text: error.message || 'Error al descargar' })

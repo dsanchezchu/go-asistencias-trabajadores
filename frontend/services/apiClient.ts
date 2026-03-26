@@ -31,6 +31,13 @@ class ApiClient {
         })
 
         if (!response.ok) {
+            if (response.status === 401) {
+                // TOKEN EXSPIRADO O INVALIDO -> LOGOUT
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem('token')
+                    window.location.href = '/'
+                }
+            }
             const error = await response.json().catch(() => ({ message: 'Error desconocido' }))
             throw new Error(error.error || error.message || 'Error en la petición')
         }
