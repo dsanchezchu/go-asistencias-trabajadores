@@ -123,34 +123,32 @@ func main() {
 			}
 
 			localPath := strings.TrimPrefix(path, basePath)
-			if localPath == "" {
-				localPath = "/"
+			if localPath == "" || localPath == "/" {
+				localPath = "index.html"
 			}
 
-			fullPath := filepath.Join(staticPath, localPath)
+			cleanPath := strings.TrimPrefix(localPath, "/")
+			fullPath := filepath.Join(staticPath, cleanPath)
 
 			if info, err := os.Stat(fullPath); err == nil && !info.IsDir() {
 				c.File(fullPath)
 				return
 			}
 
-			fullPathHtml := fullPath + ".html"
-			if info, err := os.Stat(fullPathHtml); err == nil && !info.IsDir() {
-				c.File(fullPathHtml)
+			if info, err := os.Stat(fullPath + ".html"); err == nil && !info.IsDir() {
+				c.File(fullPath + ".html")
+				return
+			}
+			indexInFolder := filepath.Join(fullPath, "index.html")
+			if info, err := os.Stat(indexInFolder); err == nil && !info.IsDir() {
+				c.File(indexInFolder)
 				return
 			}
 
-			fullPathIndex := filepath.Join(fullPath, "index.html")
-			if info, err := os.Stat(fullPathIndex); err == nil && !info.IsDir() {
-				c.File(fullPathIndex)
-				return
-			}
-
-			if strings.Contains(localPath, "/_next/") || strings.Contains(localPath, ".") {
+			if strings.Contains(cleanPath, "_next/") || strings.Contains(cleanPath, ".") {
 				c.Status(http.StatusNotFound)
 				return
 			}
-
 			c.File(filepath.Join(staticPath, "index.html"))
 		})
 	} else {
