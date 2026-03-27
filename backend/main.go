@@ -117,8 +117,11 @@ func main() {
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
 
+			// Log attempt to help debugging proxy issues
+			log.Printf("[STATIC ATTEMPT] Path: %s", path)
+
 			if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, basePath+"/api") {
-				c.JSON(http.StatusNotFound, gin.H{"error": "API endpoint not found"})
+				c.JSON(http.StatusNotFound, gin.H{"error": "API route not found"})
 				return
 			}
 
@@ -126,38 +129,50 @@ func main() {
 			if localPath == "" || localPath == "/" {
 				localPath = "index.html"
 			}
-
+			
 			cleanPath := strings.TrimPrefix(localPath, "/")
 			fullPath := filepath.Join(staticPath, cleanPath)
 
+			// 1. Exact match
 			if info, err := os.Stat(fullPath); err == nil && !info.IsDir() {
+				log.Printf("[STATIC FOUND] Serving: %s", fullPath)
 				c.File(fullPath)
 				return
 			}
 
+			// 2. .html variant
 			if info, err := os.Stat(fullPath + ".html"); err == nil && !info.IsDir() {
+				log.Printf("[STATIC FOUND] Serving HTML: %s.html", fullPath)
 				c.File(fullPath + ".html")
 				return
 			}
+
+			// 3. Directory index.html
 			indexInFolder := filepath.Join(fullPath, "index.html")
 			if info, err := os.Stat(indexInFolder); err == nil && !info.IsDir() {
+				log.Printf("[STATIC FOUND] Serving Index: %s", indexInFolder)
 				c.File(indexInFolder)
 				return
 			}
 
-			if strings.Contains(cleanPath, "_next/") || strings.Contains(cleanPath, ".") {
+			// 4. Check for Next.js internal assets that were not found
+			if strings.Contains(cleanPath, "_next/") || (strings.Contains(cleanPath, ".") && !strings.Contains(cleanPath, "/")) {
+				log.Printf("[STATIC NOT FOUND] Missing asset: %s", cleanPath)
 				c.Status(http.StatusNotFound)
 				return
 			}
+
+			// 5. App Fallback
+			log.Printf("[STATIC FALLBACK] Serving Root Index for: %s", path)
 			c.File(filepath.Join(staticPath, "index.html"))
 		})
 	} else {
-		log.Printf("Frontend static files not found at %s. Running in API-only mode.", staticPath)
+		log.Printf("Static files directory not found. API-only mode enabled.")
 		r.GET("/", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{"message": "Go Asistencias API Server", "status": "running"})
+			c.JSON(http.StatusOK, gin.H{"message": "Go Asistencias API Server", "status": "active"})
 		})
 	}
 
-	log.Printf("Servidor iniciado en el puerto %s", cfg.Port)
+	log.Printf("Server starting on port %s", cfg.Port)
 	r.Run(":" + cfg.Port)
 }
