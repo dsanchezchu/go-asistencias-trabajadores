@@ -13,7 +13,8 @@ export function useTrabajadores() {
     // Get admin filter context
     const { demoStatus } = useDemoContext()
     const isAdmin = demoStatus?.role === 'admin'
-    const adminFilter = isAdmin ? useAdminFilter() : null
+    const adminFilterCtx = useAdminFilter()
+    const adminFilter = isAdmin ? adminFilterCtx : null
 
     const fetchTrabajadores = useCallback(async () => {
         setLoading(true)

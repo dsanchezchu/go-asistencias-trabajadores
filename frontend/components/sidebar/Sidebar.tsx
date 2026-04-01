@@ -37,7 +37,8 @@ const Sidebar = () => {
     const { demoStatus, refreshDemoStatus } = useDemoContext()
 
     // Hook del filtro de admin (solo disponible para admin)
-    const adminFilter = demoStatus?.role === 'admin' ? useAdminFilter() : null
+    const adminFilterCtx = useAdminFilter()
+    const adminFilter = demoStatus?.role === 'admin' ? adminFilterCtx : null
 
     useEffect(() => {
         setMounted(true)

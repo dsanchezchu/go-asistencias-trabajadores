@@ -65,9 +65,5 @@ export function AdminFilterProvider({ children }: { children: ReactNode }) {
 }
 
 export const useAdminFilter = () => {
-  const context = useContext(AdminFilterContext)
-  if (!context) {
-    throw new Error('useAdminFilter must be used within AdminFilterProvider')
-  }
-  return context
+  return useContext(AdminFilterContext)
 }

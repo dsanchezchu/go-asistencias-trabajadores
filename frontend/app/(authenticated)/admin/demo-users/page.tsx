@@ -5,6 +5,7 @@ import { Shield, User, Calendar, Clock, Ban, CheckCircle, AlertTriangle } from '
 import Swal from 'sweetalert2'
 import { useDemoContext } from '@/context/DemoContext'
 import { useAdminFilter } from '@/context/AdminFilterContext'
+import { API_URL } from '@/config'
 
 interface DemoUser {
   id: number
@@ -36,13 +37,14 @@ const DemoUsersPage = () => {
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const { demoStatus } = useDemoContext()
-  const { fetchDemoUsers } = useAdminFilter()
+  const adminFilter = useAdminFilter()
+  const fetchDemoUsers = adminFilter?.fetchDemoUsers || (() => Promise.resolve());
 
   const fetchUsers = async () => {
     setLoading(true)
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`/api/admin/demo-users?page=${page}&limit=10`, {
+      const response = await fetch(`${API_URL}/api/admin/demo-users?page=${page}&limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -95,7 +97,7 @@ const DemoUsersPage = () => {
     if (result.isConfirmed) {
       try {
         const token = localStorage.getItem('token')
-        const response = await fetch(`/api/admin/reset-user/${userId}`, {
+        const response = await fetch(`${API_URL}/api/admin/reset-user/${userId}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

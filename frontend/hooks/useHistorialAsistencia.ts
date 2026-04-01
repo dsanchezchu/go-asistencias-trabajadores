@@ -7,7 +7,8 @@ import { AsistenciaHistorial } from '../types'
 export function useHistorialAsistencia() {
     const { demoStatus } = useDemoContext()
     const isAdmin = demoStatus?.role === 'admin'
-    const adminFilter = isAdmin ? useAdminFilter() : null
+    const adminFilterCtx = useAdminFilter()
+    const adminFilter = isAdmin ? adminFilterCtx : null
     const [asistencias, setAsistencias] = useState<AsistenciaHistorial[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')

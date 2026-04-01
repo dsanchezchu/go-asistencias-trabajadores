@@ -35,7 +35,8 @@ class ApiClient {
                 // TOKEN EXSPIRADO O INVALIDO -> LOGOUT
                 if (typeof window !== 'undefined') {
                     localStorage.removeItem('token')
-                    window.location.href = '/'
+                    const { BASE_PATH } = require('@/config')
+                    window.location.href = BASE_PATH || '/'
                 }
             }
             const error = await response.json().catch(() => ({ message: 'Error desconocido' }))

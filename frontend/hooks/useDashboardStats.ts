@@ -12,7 +12,8 @@ export function useDashboardStats() {
     // Get admin filter context
     const { demoStatus } = useDemoContext()
     const isAdmin = demoStatus?.role === 'admin'
-    const adminFilter = isAdmin ? useAdminFilter() : null
+    const adminFilterCtx = useAdminFilter()
+    const adminFilter = isAdmin ? adminFilterCtx : null
 
     const fetchData = useCallback(async () => {
         setLoading(true)

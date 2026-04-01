@@ -6,7 +6,8 @@ import { useAdminFilter } from '@/context/AdminFilterContext'
 
 export function useBackups() {
     const { refreshDemoStatus, demoStatus } = useDemoContext()
-    const { selectedDemoUser } = demoStatus?.role === 'admin' ? useAdminFilter() : { selectedDemoUser: null }
+    const adminFilter = useAdminFilter()
+    const selectedDemoUser = adminFilter?.selectedDemoUser || null
     
     const [backups, setBackups] = useState<string[]>([])
     const [loading, setLoading] = useState(false)

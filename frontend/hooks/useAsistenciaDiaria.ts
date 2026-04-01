@@ -9,7 +9,8 @@ import { AsistenciaTrabajador } from '../types'
 export function useAsistenciaDiaria() {
     const { refreshDemoStatus, demoStatus } = useDemoContext()
     const isAdmin = demoStatus?.role === 'admin'
-    const adminFilter = isAdmin ? useAdminFilter() : null
+    const adminFilterCtx = useAdminFilter()
+    const adminFilter = isAdmin ? adminFilterCtx : null
     const [fecha, setFecha] = useState(new Date().toLocaleDateString('en-CA'))
     const [loading, setLoading] = useState(true)
     const [trabajadores, setTrabajadores] = useState<AsistenciaTrabajador[]>([])

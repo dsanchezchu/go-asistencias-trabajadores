@@ -117,7 +117,6 @@ func main() {
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
 
-			// Log attempt to help debugging proxy issues
 			log.Printf("[STATIC ATTEMPT] Path: %s", path)
 
 			if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, basePath+"/api") {
@@ -129,7 +128,7 @@ func main() {
 			if localPath == "" || localPath == "/" {
 				localPath = "index.html"
 			}
-			
+
 			cleanPath := strings.TrimPrefix(localPath, "/")
 			fullPath := filepath.Join(staticPath, cleanPath)
 
