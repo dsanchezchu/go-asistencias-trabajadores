@@ -1,7 +1,7 @@
 {
   "name": "Go Asistencias",
   "short_name": "Go Asistencias",
-  "description": "Sistema de gestión de asistencias para Go Asistencias",
+  "description": "Sistema de gestión de asistencias",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

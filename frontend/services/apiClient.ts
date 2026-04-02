@@ -8,7 +8,7 @@ interface FetchOptions extends RequestInit {
 class ApiClient {
     private async request<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
         const { params, ...init } = options
-        
+
         let url = `${API_URL}${endpoint}`
         if (params) {
             const searchParams = new URLSearchParams(params)
@@ -16,7 +16,7 @@ class ApiClient {
         }
 
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-        
+
         const headers = new Headers(init.headers)
         if (token) {
             headers.set('Authorization', `Bearer ${token}`)
@@ -32,15 +32,21 @@ class ApiClient {
 
         if (!response.ok) {
             if (response.status === 401) {
-                // TOKEN EXSPIRADO O INVALIDO -> LOGOUT
                 if (typeof window !== 'undefined') {
+                    console.warn('[API 401] Unauthorized detected. Logging out and redirecting.');
                     localStorage.removeItem('token')
-                    const { BASE_PATH } = require('@/config')
+                    const { BASE_PATH } = await import('@/config')
                     window.location.href = BASE_PATH || '/'
+                    return Promise.reject(new Error('Sesión expirada'))
                 }
             }
-            const error = await response.json().catch(() => ({ message: 'Error desconocido' }))
-            throw new Error(error.error || error.message || 'Error en la petición')
+
+            const errorPayload = await response.json().catch(() => ({ message: 'Error desconocido' }))
+            const customError = new Error(errorPayload.error || errorPayload.message || 'Error en la petición') as any
+            if (errorPayload.demoInfo) customError.demoInfo = errorPayload.demoInfo;
+            if (errorPayload.type) customError.type = errorPayload.type;
+
+            throw customError
         }
 
         if (response.status === 204) return {} as T
@@ -58,16 +64,16 @@ class ApiClient {
     }
 
     post<T>(endpoint: string, body: unknown): Promise<T> {
-        return this.request<T>(endpoint, { 
-            method: 'POST', 
-            body: body instanceof FormData ? body : JSON.stringify(body) 
+        return this.request<T>(endpoint, {
+            method: 'POST',
+            body: body instanceof FormData ? body : JSON.stringify(body)
         })
     }
 
     put<T>(endpoint: string, body: unknown): Promise<T> {
-        return this.request<T>(endpoint, { 
-            method: 'PUT', 
-            body: body instanceof FormData ? body : JSON.stringify(body) 
+        return this.request<T>(endpoint, {
+            method: 'PUT',
+            body: body instanceof FormData ? body : JSON.stringify(body)
         })
     }
 
