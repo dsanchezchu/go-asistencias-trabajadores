@@ -33,7 +33,8 @@ class ApiClient {
         if (!response.ok) {
             if (response.status === 401) {
                 if (typeof window !== 'undefined') {
-                    console.warn('[API 401] Unauthorized detected. Logging out and redirecting.');
+                    console.warn(`[API 401] Unauthorized on URL: ${url}`);
+                    alert(`Detectado 401 No Autorizado en: ${url}\nSi puedes leer esto, haz click en Aceptar y mira si te desloguea.`);
                     localStorage.removeItem('token')
                     const { BASE_PATH } = await import('@/config')
                     window.location.href = BASE_PATH || '/'
