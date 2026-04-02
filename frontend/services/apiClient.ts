@@ -31,22 +31,11 @@ class ApiClient {
         })
 
         if (!response.ok) {
-            if (response.status === 401) {
-                if (typeof window !== 'undefined') {
-                    console.warn(`[API 401] Unauthorized on URL: ${url}`);
-                    alert(`Detectado 401 No Autorizado en: ${url}\nSi puedes leer esto, haz click en Aceptar y mira si te desloguea.`);
-                    localStorage.removeItem('token')
-                    const { BASE_PATH } = await import('@/config')
-                    window.location.href = BASE_PATH || '/'
-                    return Promise.reject(new Error('Sesión expirada'))
-                }
-            }
-
             const errorPayload = await response.json().catch(() => ({ message: 'Error desconocido' }))
             const customError = new Error(errorPayload.error || errorPayload.message || 'Error en la petición') as any
             if (errorPayload.demoInfo) customError.demoInfo = errorPayload.demoInfo;
             if (errorPayload.type) customError.type = errorPayload.type;
-
+            
             throw customError
         }
 
