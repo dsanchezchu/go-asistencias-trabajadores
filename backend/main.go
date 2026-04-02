@@ -154,6 +154,17 @@ func main() {
 				return
 			}
 
+			// 3.5 RSC Fallback (Para evitar 404 en Next.js app router: ej. backups.txt -> backups/index.txt)
+			if strings.HasSuffix(cleanPath, ".txt") && !strings.Contains(cleanPath, "/") {
+				baseName := strings.TrimSuffix(cleanPath, ".txt")
+				rscPath := filepath.Join(staticPath, baseName, "index.txt")
+				if info, err := os.Stat(rscPath); err == nil && !info.IsDir() {
+					log.Printf("[STATIC FOUND] Serving RSC Layout: %s", rscPath)
+					c.File(rscPath)
+					return
+				}
+			}
+
 			// 4. Check for Next.js internal assets that were not found
 			if strings.Contains(cleanPath, "_next/") || (strings.Contains(cleanPath, ".") && !strings.Contains(cleanPath, "/")) {
 				log.Printf("[STATIC NOT FOUND] Missing asset: %s", cleanPath)
