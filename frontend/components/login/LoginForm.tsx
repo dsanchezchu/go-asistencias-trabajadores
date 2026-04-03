@@ -86,21 +86,13 @@ export default function LoginForm() {
                 <Lock size={18} />
               </div>
               <input 
-                type={showPassword ? 'text' : 'password'} 
+                type="password" 
                 placeholder="Contraseña" 
-                className="input w-full pl-12 pr-12 bg-base-300/20 dark:bg-base-200/50 border-foreground/[0.05] hover:border-primary/30 focus:border-primary/50 focus:bg-base-100 dark:focus:bg-base-200 transition-all rounded-2xl h-14 font-semibold text-foreground placeholder:text-foreground/30 shadow-sm" 
+                className="input w-full pl-12 pr-4 bg-base-300/20 dark:bg-base-200/50 border-foreground/[0.05] hover:border-primary/30 focus:border-primary/50 focus:bg-base-100 dark:focus:bg-base-200 transition-all rounded-2xl h-14 font-semibold text-foreground placeholder:text-foreground/30 shadow-sm" 
                 value={password} 
                 onChange={e => setPassword(e.target.value)} 
                 aria-label="Contraseña"
               />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-4 flex items-center text-foreground/60 hover:text-foreground/90 transition-colors"
-                onClick={() => setShowPassword(v => !v)}
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
             </div>
             
             <button
