@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   basePath: '/proyectos/asistencias',
   output: 'export',
+  trailingSlash: true,
   distDir: 'out',
 
   images: {
